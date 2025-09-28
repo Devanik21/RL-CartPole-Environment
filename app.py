@@ -450,7 +450,7 @@ def update_plots(plot_placeholder, stats_placeholder):
     )
     
     fig.update_layout(height=600, showlegend=False, title_text="Training Metrics")
-    plot_placeholder.plotly_chart(fig, use_container_width=True)
+    plot_placeholder.plotly_chart(fig, use_container_width=True, key=f"training_plots_{len(episodes)}_{int(time.time()*1000)}")
     
     # Update statistics
     if rewards:
