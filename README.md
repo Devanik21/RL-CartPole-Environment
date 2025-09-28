@@ -14,7 +14,7 @@ This interactive dashboard provides researchers and practitioners with a complet
 
 ## 🚀 Live Demo
 
-**[Try the Live Demo →](https://your-streamlit-app-url.com)**
+**[Try the Live Demo →]([https://your-streamlit-app-url.com](https://ktguhhpiffqbore4vm4avl.streamlit.app/))**
 
 ![Training Dashboard Preview](https://via.placeholder.com/800x400/2D2419/F5DEB3?text=RL+Training+Dashboard)
 
