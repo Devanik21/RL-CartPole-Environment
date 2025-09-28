@@ -263,7 +263,7 @@ def train_agent():
     st.success(f"Training completed! Final average reward: {avg_reward:.2f}")
     
     # Auto-trigger visualization after training
-    st.balloons()
+    
     time.sleep(1)
     visualize_trained_agent()
 
@@ -326,7 +326,7 @@ def visualize_trained_agent():
                     
                     # Display current frame
                     img = Image.fromarray(frame)
-                    image_placeholder.image(img, caption=f"Episode {episode + 1} - Step {step_count}", use_column_width=True)
+                    image_placeholder.image(img, caption=f"Episode {episode + 1} - Step {step_count}", use_container_width=True)
                     
                     # Show game info
                     if show_info and info_placeholder:
