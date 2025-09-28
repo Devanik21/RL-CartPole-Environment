@@ -116,7 +116,7 @@ if 'agent_frames' not in st.session_state:
     st.session_state.agent_frames = []
 
 # Main title
-st.title("🤖 Reinforcement Learning Agent Training Dashboard")
+st.title(" Reinforcement Learning Agent Training Dashboard")
 st.markdown("### CartPole Environment - Deep Q-Network (DQN)")
 
 # Sidebar for hyperparameters
