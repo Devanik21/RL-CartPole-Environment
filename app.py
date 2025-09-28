@@ -406,6 +406,63 @@ def create_gif_from_frames():
     gif_buffer.seek(0)
     
     return gif_buffer.getvalue()
+
+def update_plots(plot_placeholder, stats_placeholder):
+    if not st.session_state.training_data['episodes']:
+        return
+    
+    # Create subplots
+    fig = make_subplots(
+        rows=2, cols=2,
+        subplot_titles=('Episode Rewards', 'Training Loss', 'Epsilon Decay', 'Moving Average Reward'),
+        specs=[[{"secondary_y": False}, {"secondary_y": False}],
+               [{"secondary_y": False}, {"secondary_y": False}]]
+    )
+    
+    episodes = st.session_state.training_data['episodes']
+    rewards = st.session_state.training_data['rewards']
+    losses = st.session_state.training_data['losses']
+    epsilons = st.session_state.training_data['epsilon']
+    avg_rewards = st.session_state.training_data['avg_rewards']
+    
+    # Episode rewards
+    fig.add_trace(
+        go.Scatter(x=episodes, y=rewards, mode='lines+markers', name='Reward', line=dict(color='blue')),
+        row=1, col=1
+    )
+    
+    # Training loss
+    fig.add_trace(
+        go.Scatter(x=episodes, y=losses, mode='lines', name='Loss', line=dict(color='red')),
+        row=1, col=2
+    )
+    
+    # Epsilon decay
+    fig.add_trace(
+        go.Scatter(x=episodes, y=epsilons, mode='lines', name='Epsilon', line=dict(color='green')),
+        row=2, col=1
+    )
+    
+    # Moving average reward
+    fig.add_trace(
+        go.Scatter(x=episodes, y=avg_rewards, mode='lines', name='Avg Reward', line=dict(color='purple')),
+        row=2, col=2
+    )
+    
+    fig.update_layout(height=600, showlegend=False, title_text="Training Metrics")
+    plot_placeholder.plotly_chart(fig, use_container_width=True)
+    
+    # Update statistics
+    if rewards:
+        with stats_placeholder.container():
+            st.metric("Current Episode", len(episodes))
+            st.metric("Last Reward", f"{rewards[-1]:.2f}")
+            st.metric("Best Reward", f"{max(rewards):.2f}")
+            st.metric("Average Reward", f"{np.mean(rewards):.2f}")
+            if losses:
+                st.metric("Current Loss", f"{losses[-1]:.4f}")
+            st.metric("Current Epsilon", f"{epsilons[-1]:.3f}")
+
     if not st.session_state.training_data['episodes']:
         return
     
