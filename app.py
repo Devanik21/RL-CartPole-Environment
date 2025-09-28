@@ -135,7 +135,7 @@ target_update_freq = st.sidebar.slider("Target Network Update Frequency", 5, 50,
 batch_size = st.sidebar.selectbox("Batch Size", [16, 32, 64], index=1)
 
 # Initialize agent button
-if st.sidebar.button("🚀 Initialize Agent", type="primary"):
+if st.sidebar.button("Initialize Agent", type="primary"):
     env = gym.make('CartPole-v1')
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
