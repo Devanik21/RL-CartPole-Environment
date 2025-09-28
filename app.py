@@ -15,6 +15,8 @@ from plotly.subplots import make_subplots
 import time
 import io
 import base64
+from PIL import Image
+import cv2
 
 # Set page config
 st.set_page_config(
@@ -108,8 +110,10 @@ if 'training_data' not in st.session_state:
         'epsilon': [],
         'avg_rewards': []
     }
-if 'is_training' not in st.session_state:
-    st.session_state.is_training = False
+if 'training_completed' not in st.session_state:
+    st.session_state.training_completed = False
+if 'agent_frames' not in st.session_state:
+    st.session_state.agent_frames = []
 
 # Main title
 st.title("🤖 Reinforcement Learning Agent Training Dashboard")
@@ -255,9 +259,153 @@ def train_agent():
             update_plots(plot_placeholder, stats_placeholder)
     
     env.close()
+    st.session_state.training_completed = True
     st.success(f"Training completed! Final average reward: {avg_reward:.2f}")
+    
+    # Auto-trigger visualization after training
+    st.balloons()
+    time.sleep(1)
+    visualize_trained_agent()
 
-def update_plots(plot_placeholder, stats_placeholder):
+def visualize_trained_agent():
+    """Visualize the trained agent playing CartPole"""
+    if st.session_state.agent is None:
+        st.error("No trained agent available!")
+        return
+    
+    env = gym.make('CartPole-v1', render_mode='rgb_array')
+    agent = st.session_state.agent
+    
+    # Save current epsilon and set to 0 for greedy policy
+    original_epsilon = agent.epsilon
+    agent.epsilon = 0
+    
+    # Container for visualization
+    viz_container = st.container()
+    with viz_container:
+        st.subheader("🎬 Agent Visualization")
+        
+        # Controls
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            num_episodes_viz = st.selectbox("Episodes to visualize:", [1, 3, 5], index=0)
+        with col2:
+            frame_delay = st.slider("Frame delay (ms):", 50, 500, 100)
+        with col3:
+            show_info = st.checkbox("Show game info", value=True)
+    
+    # Create placeholders
+    image_placeholder = st.empty()
+    info_placeholder = st.empty() if show_info else None
+    episode_progress = st.progress(0)
+    
+    st.session_state.agent_frames = []
+    
+    try:
+        for episode in range(num_episodes_viz):
+            state, _ = env.reset()
+            episode_frames = []
+            total_reward = 0
+            step_count = 0
+            
+            episode_progress.progress((episode) / num_episodes_viz)
+            
+            for step in range(500):  # Max steps
+                # Get action from trained agent (greedy policy)
+                action = agent.act(state)
+                
+                # Take action
+                next_state, reward, done, truncated, _ = env.step(action)
+                total_reward += reward
+                step_count += 1
+                
+                # Render frame
+                frame = env.render()
+                if frame is not None:
+                    episode_frames.append(frame)
+                    
+                    # Display current frame
+                    img = Image.fromarray(frame)
+                    image_placeholder.image(img, caption=f"Episode {episode + 1} - Step {step_count}", use_column_width=True)
+                    
+                    # Show game info
+                    if show_info and info_placeholder:
+                        with info_placeholder.container():
+                            col1, col2, col3, col4 = st.columns(4)
+                            with col1:
+                                st.metric("Episode", episode + 1)
+                            with col2:
+                                st.metric("Step", step_count)
+                            with col3:
+                                st.metric("Total Reward", int(total_reward))
+                            with col4:
+                                st.metric("Action", "Left" if action == 0 else "Right")
+                            
+                            # Show state information
+                            st.write("**Cart State:**")
+                            col1, col2, col3, col4 = st.columns(4)
+                            with col1:
+                                st.write(f"Position: {next_state[0]:.3f}")
+                            with col2:
+                                st.write(f"Velocity: {next_state[1]:.3f}")
+                            with col3:
+                                st.write(f"Pole Angle: {next_state[2]:.3f}")
+                            with col4:
+                                st.write(f"Pole Velocity: {next_state[3]:.3f}")
+                
+                state = next_state
+                
+                # Add delay for smooth visualization
+                time.sleep(frame_delay / 1000.0)
+                
+                if done or truncated:
+                    break
+            
+            st.session_state.agent_frames.extend(episode_frames)
+            
+            # Episode summary
+            if show_info and info_placeholder:
+                with info_placeholder.container():
+                    if done and not truncated:
+                        st.success(f"Episode {episode + 1} completed! Total steps: {step_count}")
+                    else:
+                        st.info(f"Episode {episode + 1} - Pole fell after {step_count} steps")
+        
+        episode_progress.progress(1.0)
+        
+    except Exception as e:
+        st.error(f"Error during visualization: {str(e)}")
+    
+    finally:
+        # Restore original epsilon
+        agent.epsilon = original_epsilon
+        env.close()
+
+def create_gif_from_frames():
+    """Create a GIF from collected frames"""
+    if not st.session_state.agent_frames:
+        st.warning("No frames available to create GIF")
+        return None
+    
+    # Convert frames to PIL Images
+    pil_images = []
+    for frame in st.session_state.agent_frames[::2]:  # Take every other frame to reduce size
+        img = Image.fromarray(frame)
+        pil_images.append(img)
+    
+    # Save as GIF in memory
+    gif_buffer = io.BytesIO()
+    pil_images[0].save(
+        gif_buffer,
+        format='GIF',
+        save_all=True,
+        append_images=pil_images[1:],
+        duration=100,  # milliseconds per frame
+        loop=0
+    )
+    gif_buffer.seek(0)
+    
+    return gif_buffer.getvalue()
     if not st.session_state.training_data['episodes']:
         return
     
@@ -321,6 +469,32 @@ if start_training:
 # Display current plots if data exists
 if st.session_state.training_data['episodes']:
     update_plots(plot_placeholder, stats_placeholder)
+
+# Agent Visualization Section (only show after training is complete)
+if st.session_state.training_completed and st.session_state.agent is not None:
+    st.header("🎬 Trained Agent Visualization")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("🎮 Visualize Agent", type="primary"):
+            visualize_trained_agent()
+    
+    with col2:
+        if st.button("🎬 Create GIF") and st.session_state.agent_frames:
+            gif_data = create_gif_from_frames()
+            if gif_data:
+                st.download_button(
+                    label="📥 Download Agent GIF",
+                    data=gif_data,
+                    file_name="trained_agent_cartpole.gif",
+                    mime="image/gif"
+                )
+    
+    with col3:
+        if st.button("🔄 Clear Frames"):
+            st.session_state.agent_frames = []
+            st.success("Frames cleared!")
 
 # Test trained agent section
 st.header("🎮 Test Trained Agent")
