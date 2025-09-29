@@ -105,7 +105,8 @@ ENVIRONMENTS = {
     }
 }
 
-# --- This is the corrected selection logic ---
+# --- This is the single, correct selection block you should have ---
+
 st.sidebar.header("🎮 Environment Selection")
 env_names = list(ENVIRONMENTS.keys())
 env_display_names = [f"{ENVIRONMENTS[env]['name']} ({ENVIRONMENTS[env]['type']})" for env in env_names]
@@ -124,8 +125,8 @@ selected_env_index = st.sidebar.selectbox(
     "Choose Environment:",
     options=range(len(env_names)),
     format_func=lambda x: env_display_names[x],
-    index=current_index
-    key="env_selector"
+    index=current_index,
+    key="env_selector" # Adding an explicit key is best practice!
 )
 
 # Update the session state with the user's new selection
