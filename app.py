@@ -26,6 +26,80 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Environment configurations
+ENVIRONMENTS = {
+    'CartPole-v1': {
+        'name': 'CartPole',
+        'description': 'Balance a pole on a moving cart',
+        'type': 'discrete',
+        'max_steps': 500,
+        'success_threshold': 475
+    },
+    'Acrobot-v1': {
+        'name': 'Acrobot',
+        'description': 'Swing up a two-link robot arm',
+        'type': 'discrete',
+        'max_steps': 500,
+        'success_threshold': -100
+    },
+    'MountainCar-v0': {
+        'name': 'Mountain Car',
+        'description': 'Drive up a steep mountain',
+        'type': 'discrete',
+        'max_steps': 200,
+        'success_threshold': -110
+    },
+    'LunarLander-v2': {
+        'name': 'Lunar Lander',
+        'description': 'Land a spacecraft safely',
+        'type': 'discrete',
+        'max_steps': 1000,
+        'success_threshold': 200
+    },
+    'Pendulum-v1': {
+        'name': 'Pendulum',
+        'description': 'Swing up an inverted pendulum',
+        'type': 'continuous',
+        'max_steps': 200,
+        'success_threshold': -200
+    },
+    'MountainCarContinuous-v0': {
+        'name': 'Mountain Car Continuous',
+        'description': 'Drive up a mountain with continuous actions',
+        'type': 'continuous',
+        'max_steps': 999,
+        'success_threshold': 90
+    },
+    'BipedalWalker-v3': {
+        'name': 'Bipedal Walker',
+        'description': 'Teach a 2D robot to walk',
+        'type': 'continuous',
+        'max_steps': 1600,
+        'success_threshold': 300
+    },
+    'CarRacing-v2': {
+        'name': 'Car Racing',
+        'description': 'Race a car on a track',
+        'type': 'continuous',
+        'max_steps': 1000,
+        'success_threshold': 900
+    },
+    'Pusher-v4': {
+        'name': 'Pusher (Mujoco)',
+        'description': 'Push object to target',
+        'type': 'continuous',
+        'max_steps': 100,
+        'success_threshold': 0
+    },
+    'Reacher-v4': {
+        'name': 'Reacher (Mujoco)',
+        'description': 'Reach a target with robot arm',
+        'type': 'continuous',
+        'max_steps': 50,
+        'success_threshold': -5
+    }
+}
+
 # DQN Network Architecture
 class DQN(nn.Module):
     def __init__(self, state_size, action_size, hidden_size=128):
