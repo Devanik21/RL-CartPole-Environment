@@ -116,8 +116,33 @@ if 'agent_frames' not in st.session_state:
     st.session_state.agent_frames = []
 
 # Main title
-st.title(" Reinforcement Learning Agent Training Dashboard")
-st.markdown("### CartPole Environment - Deep Q-Network (DQN)")
+st.title("🤖 Reinforcement Learning Agent Training Dashboard")
+st.markdown("### Multi-Environment Deep Q-Network (DQN) & Continuous Control")
+
+# Environment Selection
+st.sidebar.header("🎮 Environment Selection")
+env_names = list(ENVIRONMENTS.keys())
+env_display_names = [f"{ENVIRONMENTS[env]['name']} ({ENVIRONMENTS[env]['type']})" for env in env_names]
+
+selected_env_index = st.sidebar.selectbox(
+    "Choose Environment:",
+    range(len(env_names)),
+    format_func=lambda x: env_display_names[x],
+    index=env_names.index(st.session_state.selected_env) if st.session_state.selected_env in env_names else 0
+)
+
+st.session_state.selected_env = env_names[selected_env_index]
+current_env_config = ENVIRONMENTS[st.session_state.selected_env]
+
+# Display environment info
+with st.sidebar.expander("ℹ️ Environment Info", expanded=False):
+    st.write(f"**Name:** {current_env_config['name']}")
+    st.write(f"**Type:** {current_env_config['type'].title()}")
+    st.write(f"**Description:** {current_env_config['description']}")
+    st.write(f"**Max Steps:** {current_env_config['max_steps']}")
+    st.write(f"**Success Threshold:** {current_env_config['success_threshold']}")
+
+st.sidebar.markdown("---")
 
 # Sidebar for hyperparameters
 st.sidebar.header("🔧 Hyperparameters")
@@ -135,31 +160,44 @@ target_update_freq = st.sidebar.slider("Target Network Update Frequency", 5, 50,
 batch_size = st.sidebar.selectbox("Batch Size", [16, 32, 64], index=1)
 
 # Initialize agent button
-if st.sidebar.button("Initialize Agent", type="primary"):
-    env = gym.make('CartPole-v1')
-    state_size = env.observation_space.shape[0]
-    action_size = env.action_space.n
-    
-    st.session_state.agent = DQNAgent(
-        state_size=state_size,
-        action_size=action_size,
-        lr=learning_rate,
-        gamma=gamma,
-        epsilon=epsilon,
-        epsilon_min=epsilon_min,
-        epsilon_decay=epsilon_decay
-    )
-    
-    st.session_state.training_data = {
-        'episodes': [],
-        'rewards': [],
-        'losses': [],
-        'epsilon': [],
-        'avg_rewards': []
-    }
-    
-    st.sidebar.success("Agent initialized successfully!")
-    env.close()
+if st.sidebar.button("🚀 Initialize Agent", type="primary"):
+    try:
+        env = gym.make(st.session_state.selected_env)
+        
+        # Get state and action sizes based on environment type
+        if current_env_config['type'] == 'discrete':
+            state_size = env.observation_space.shape[0]
+            action_size = env.action_space.n
+        else:
+            # For continuous environments
+            state_size = env.observation_space.shape[0]
+            action_size = env.action_space.shape[0] if hasattr(env.action_space, 'shape') else 1
+        
+        st.session_state.agent = DQNAgent(
+            state_size=state_size,
+            action_size=action_size,
+            lr=learning_rate,
+            gamma=gamma,
+            epsilon=epsilon,
+            epsilon_min=epsilon_min,
+            epsilon_decay=epsilon_decay
+        )
+        
+        st.session_state.training_data = {
+            'episodes': [],
+            'rewards': [],
+            'losses': [],
+            'epsilon': [],
+            'avg_rewards': []
+        }
+        
+        st.session_state.training_completed = False
+        
+        st.sidebar.success(f"Agent initialized for {current_env_config['name']}!")
+        env.close()
+    except Exception as e:
+        st.sidebar.error(f"Error initializing environment: {str(e)}")
+        st.sidebar.info("Note: Some environments require additional packages. Check requirements.")
 
 # Main content area
 col1, col2 = st.columns([2, 1])
@@ -203,7 +241,16 @@ def train_agent():
         st.error("Please initialize the agent first!")
         return
     
-    env = gym.make('CartPole-v1')
+    env_name = st.session_state.selected_env
+    env_config = ENVIRONMENTS[env_name]
+    
+    try:
+        env = gym.make(env_name)
+    except Exception as e:
+        st.error(f"Error creating environment: {str(e)}")
+        st.info("Some environments may require additional packages. Check the requirements.")
+        return
+    
     agent = st.session_state.agent
     
     progress_bar = st.progress(0)
@@ -212,68 +259,90 @@ def train_agent():
     for episode in range(num_episodes):
         if stop_training:
             break
+        
+        try:
+            state, _ = env.reset()
+            total_reward = 0
+            losses = []
             
-        state, _ = env.reset()
-        total_reward = 0
-        losses = []
-        
-        for step in range(500):  # Max steps per episode
-            action = agent.act(state)
-            next_state, reward, done, truncated, _ = env.step(action)
+            for step in range(env_config['max_steps']):
+                action = agent.act(state)
+                
+                # Handle continuous vs discrete action spaces
+                if env_config['type'] == 'continuous':
+                    # Convert discrete action to continuous
+                    action_continuous = np.array([action / (agent.action_size - 1) * 2 - 1])
+                    if hasattr(env.action_space, 'shape') and len(env.action_space.shape) > 0:
+                        action_continuous = np.repeat(action_continuous, env.action_space.shape[0])
+                    next_state, reward, done, truncated, _ = env.step(action_continuous)
+                else:
+                    next_state, reward, done, truncated, _ = env.step(action)
+                
+                agent.remember(state, action, reward, next_state, done or truncated)
+                state = next_state
+                total_reward += reward
+                
+                if len(agent.memory) > batch_size:
+                    loss = agent.replay(batch_size)
+                    if loss > 0:
+                        losses.append(loss)
+                
+                if done or truncated:
+                    break
             
-            agent.remember(state, action, reward, next_state, done or truncated)
-            state = next_state
-            total_reward += reward
+            # Update target network
+            if episode % target_update_freq == 0:
+                agent.update_target_network()
             
-            if len(agent.memory) > batch_size:
-                loss = agent.replay(batch_size)
-                if loss > 0:
-                    losses.append(loss)
+            # Store training data
+            st.session_state.training_data['episodes'].append(episode + 1)
+            st.session_state.training_data['rewards'].append(total_reward)
+            st.session_state.training_data['losses'].append(np.mean(losses) if losses else 0)
+            st.session_state.training_data['epsilon'].append(agent.epsilon)
             
-            if done or truncated:
-                break
+            # Calculate moving average
+            if len(st.session_state.training_data['rewards']) >= 10:
+                avg_reward = np.mean(st.session_state.training_data['rewards'][-10:])
+            else:
+                avg_reward = np.mean(st.session_state.training_data['rewards'])
+            st.session_state.training_data['avg_rewards'].append(avg_reward)
+            
+            # Update progress
+            progress_bar.progress((episode + 1) / num_episodes)
+            status_text.text(f"Episode {episode + 1}/{num_episodes} - Reward: {total_reward:.2f} - Epsilon: {agent.epsilon:.3f}")
+            
+            # Update plots every 10 episodes
+            if episode % 10 == 0:
+                update_plots(plot_placeholder, stats_placeholder)
         
-        # Update target network
-        if episode % target_update_freq == 0:
-            agent.update_target_network()
-        
-        # Store training data
-        st.session_state.training_data['episodes'].append(episode + 1)
-        st.session_state.training_data['rewards'].append(total_reward)
-        st.session_state.training_data['losses'].append(np.mean(losses) if losses else 0)
-        st.session_state.training_data['epsilon'].append(agent.epsilon)
-        
-        # Calculate moving average
-        if len(st.session_state.training_data['rewards']) >= 10:
-            avg_reward = np.mean(st.session_state.training_data['rewards'][-10:])
-        else:
-            avg_reward = np.mean(st.session_state.training_data['rewards'])
-        st.session_state.training_data['avg_rewards'].append(avg_reward)
-        
-        # Update progress
-        progress_bar.progress((episode + 1) / num_episodes)
-        status_text.text(f"Episode {episode + 1}/{num_episodes} - Reward: {total_reward:.2f} - Epsilon: {agent.epsilon:.3f}")
-        
-        # Update plots every 10 episodes
-        if episode % 10 == 0:
-            update_plots(plot_placeholder, stats_placeholder)
+        except Exception as e:
+            st.error(f"Error during episode {episode + 1}: {str(e)}")
+            break
     
     env.close()
     st.session_state.training_completed = True
     st.success(f"Training completed! Final average reward: {avg_reward:.2f}")
     
     # Auto-trigger visualization after training
-    
+    st.balloons()
     time.sleep(1)
     visualize_trained_agent()
 
 def visualize_trained_agent():
-    """Visualize the trained agent playing CartPole"""
+    """Visualize the trained agent playing the selected environment"""
     if st.session_state.agent is None:
         st.error("No trained agent available!")
         return
     
-    env = gym.make('CartPole-v1', render_mode='rgb_array')
+    env_name = st.session_state.selected_env
+    env_config = ENVIRONMENTS[env_name]
+    
+    try:
+        env = gym.make(env_name, render_mode='rgb_array')
+    except Exception as e:
+        st.error(f"Error creating environment for visualization: {str(e)}")
+        return
+    
     agent = st.session_state.agent
     
     # Save current epsilon and set to 0 for greedy policy
@@ -283,7 +352,7 @@ def visualize_trained_agent():
     # Container for visualization
     viz_container = st.container()
     with viz_container:
-        st.subheader("🎬 Agent Visualization")
+        st.subheader(f"🎬 {env_config['name']} Agent Visualization")
         
         # Controls
         col1, col2, col3 = st.columns(3)
@@ -310,12 +379,21 @@ def visualize_trained_agent():
             
             episode_progress.progress((episode) / num_episodes_viz)
             
-            for step in range(500):  # Max steps
+            for step in range(env_config['max_steps']):
                 # Get action from trained agent (greedy policy)
                 action = agent.act(state)
                 
-                # Take action
-                next_state, reward, done, truncated, _ = env.step(action)
+                # Handle continuous vs discrete action spaces
+                if env_config['type'] == 'continuous':
+                    action_continuous = np.array([action / (agent.action_size - 1) * 2 - 1])
+                    if hasattr(env.action_space, 'shape') and len(env.action_space.shape) > 0:
+                        action_continuous = np.repeat(action_continuous, env.action_space.shape[0])
+                    next_state, reward, done, truncated, _ = env.step(action_continuous)
+                    action_display = f"Continuous: {action_continuous[0]:.3f}"
+                else:
+                    next_state, reward, done, truncated, _ = env.step(action)
+                    action_display = f"Action: {action}"
+                
                 total_reward += reward
                 step_count += 1
                 
@@ -326,7 +404,7 @@ def visualize_trained_agent():
                     
                     # Display current frame
                     img = Image.fromarray(frame)
-                    image_placeholder.image(img, caption=f"Episode {episode + 1} - Step {step_count}", use_container_width=True)
+                    image_placeholder.image(img, caption=f"{env_config['name']} - Episode {episode + 1} - Step {step_count}", use_column_width=True)
                     
                     # Show game info
                     if show_info and info_placeholder:
@@ -337,21 +415,16 @@ def visualize_trained_agent():
                             with col2:
                                 st.metric("Step", step_count)
                             with col3:
-                                st.metric("Total Reward", int(total_reward))
+                                st.metric("Total Reward", f"{total_reward:.2f}")
                             with col4:
-                                st.metric("Action", "Left" if action == 0 else "Right")
+                                st.metric("Action", action_display)
                             
                             # Show state information
-                            st.write("**Cart State:**")
-                            col1, col2, col3, col4 = st.columns(4)
-                            with col1:
-                                st.write(f"Position: {next_state[0]:.3f}")
-                            with col2:
-                                st.write(f"Velocity: {next_state[1]:.3f}")
-                            with col3:
-                                st.write(f"Pole Angle: {next_state[2]:.3f}")
-                            with col4:
-                                st.write(f"Pole Velocity: {next_state[3]:.3f}")
+                            st.write(f"**State ({env_config['type']}):**")
+                            state_cols = st.columns(min(len(next_state), 6))
+                            for i, val in enumerate(next_state[:6]):
+                                with state_cols[i]:
+                                    st.write(f"s[{i}]: {val:.3f}")
                 
                 state = next_state
                 
@@ -366,10 +439,10 @@ def visualize_trained_agent():
             # Episode summary
             if show_info and info_placeholder:
                 with info_placeholder.container():
-                    if done and not truncated:
-                        st.success(f"Episode {episode + 1} completed! Total steps: {step_count}")
+                    if total_reward >= env_config['success_threshold']:
+                        st.success(f"✅ Episode {episode + 1} - SUCCESS! Reward: {total_reward:.2f} (Steps: {step_count})")
                     else:
-                        st.info(f"Episode {episode + 1} - Pole fell after {step_count} steps")
+                        st.info(f"Episode {episode + 1} - Reward: {total_reward:.2f} (Steps: {step_count})")
         
         episode_progress.progress(1.0)
         
