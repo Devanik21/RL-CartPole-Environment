@@ -19,6 +19,11 @@ from PIL import Image
 import cv2
 
 # Set page config
+# ==============================================================================
+# START: Replace your existing code with this entire block
+# ==============================================================================
+
+# Set page config
 st.set_page_config(
     page_title="RL Agent Training Dashboard",
     page_icon="🤖",
@@ -99,6 +104,36 @@ ENVIRONMENTS = {
         'success_threshold': -5
     }
 }
+
+# --- This is the corrected selection logic ---
+st.sidebar.header("🎮 Environment Selection")
+env_names = list(ENVIRONMENTS.keys())
+env_display_names = [f"{ENVIRONMENTS[env]['name']} ({ENVIRONMENTS[env]['type']})" for env in env_names]
+
+# Initialize session state for the selected environment if it doesn't exist
+if 'selected_env' not in st.session_state:
+    st.session_state.selected_env = env_names[0]
+
+# Get the index of the currently selected environment for the selectbox
+try:
+    current_index = env_names.index(st.session_state.selected_env)
+except ValueError:
+    current_index = 0
+
+selected_env_index = st.sidebar.selectbox(
+    "Choose Environment:",
+    options=range(len(env_names)),
+    format_func=lambda x: env_display_names[x],
+    index=current_index
+)
+
+# Update the session state with the user's new selection
+st.session_state.selected_env = env_names[selected_env_index]
+current_env_config = ENVIRONMENTS[st.session_state.selected_env]
+
+# ==============================================================================
+# END: Your original code should continue from here (DQN Class, etc.)
+# ==============================================================================
 
 # DQN Network Architecture
 class DQN(nn.Module):
