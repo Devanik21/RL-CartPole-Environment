@@ -198,13 +198,24 @@ st.sidebar.header("🎮 Environment Selection")
 env_names = list(ENVIRONMENTS.keys())
 env_display_names = [f"{ENVIRONMENTS[env]['name']} ({ENVIRONMENTS[env]['type']})" for env in env_names]
 
+# Initialize session state for the selected environment if it doesn't exist
+if 'selected_env' not in st.session_state:
+    st.session_state.selected_env = env_names[0]  # Default to the first one
+
+# Get the index of the currently selected environment for the selectbox
+try:
+    current_index = env_names.index(st.session_state.selected_env)
+except ValueError:
+    current_index = 0 # Fallback in case the saved state is invalid
+
 selected_env_index = st.sidebar.selectbox(
     "Choose Environment:",
-    range(len(env_names)),
+    options=range(len(env_names)),
     format_func=lambda x: env_display_names[x],
-    index=env_names.index(st.session_state.selected_env) if st.session_state.selected_env in env_names else 0
+    index=current_index
 )
 
+# Update the session state with the user's new selection
 st.session_state.selected_env = env_names[selected_env_index]
 current_env_config = ENVIRONMENTS[st.session_state.selected_env]
 
