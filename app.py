@@ -232,22 +232,6 @@ st.markdown("### Multi-Environment Deep Q-Network (DQN) & Continuous Control")
 
 
 
-# Get the index of the currently selected environment for the selectbox
-try:
-    current_index = env_names.index(st.session_state.selected_env)
-except ValueError:
-    current_index = 0 # Fallback in case the saved state is invalid
-
-selected_env_index = st.sidebar.selectbox(
-    "Choose Environment:",
-    options=range(len(env_names)),
-    format_func=lambda x: env_display_names[x],
-    index=current_index
-)
-
-# Update the session state with the user's new selection
-st.session_state.selected_env = env_names[selected_env_index]
-current_env_config = ENVIRONMENTS[st.session_state.selected_env]
 
 # Display environment info
 with st.sidebar.expander("ℹ️ Environment Info", expanded=False):
