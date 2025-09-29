@@ -718,7 +718,8 @@ if st.session_state.agent is not None:
     
     with col1:
         if st.button("🧪 Test Agent (5 Episodes)"):
-            env = gym.make('CartPole-v1', render_mode='rgb_array')
+            # Suggested change
+            env = gym.make(st.session_state.selected_env, render_mode='rgb_array')
             agent = st.session_state.agent
             test_rewards = []
             
