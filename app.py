@@ -125,6 +125,7 @@ selected_env_index = st.sidebar.selectbox(
     options=range(len(env_names)),
     format_func=lambda x: env_display_names[x],
     index=current_index
+    key="env_selector"
 )
 
 # Update the session state with the user's new selection
