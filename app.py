@@ -18,7 +18,7 @@ import base64
 from PIL import Image
 import cv2
 
-# Set page config - MUST BE FIRST STREAMLIT COMMAND
+# Set page config
 st.set_page_config(
     page_title="RL Agent Training Dashboard",
     page_icon="🤖",
@@ -26,7 +26,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Environment configurations - DEFINE EARLY
+# Environment configurations
 ENVIRONMENTS = {
     'CartPole-v1': {
         'name': 'CartPole',
@@ -184,14 +184,10 @@ if 'training_data' not in st.session_state:
         'epsilon': [],
         'avg_rewards': []
     }
-if 'is_training' not in st.session_state:
-    st.session_state.is_training = False
 if 'training_completed' not in st.session_state:
     st.session_state.training_completed = False
 if 'agent_frames' not in st.session_state:
     st.session_state.agent_frames = []
-if 'selected_env' not in st.session_state:
-    st.session_state.selected_env = 'CartPole-v1'
 
 # Main title
 st.title("🤖 Reinforcement Learning Agent Training Dashboard")
@@ -313,62 +309,98 @@ if reset_training:
     }
     st.success("Training data reset!")
 
-# Function definitions
-def update_plots(plot_placeholder, stats_placeholder):
-    if not st.session_state.training_data['episodes']:
+# Training function
+def train_agent():
+    if st.session_state.agent is None:
+        st.error("Please initialize the agent first!")
         return
     
-    # Create subplots
-    fig = make_subplots(
-        rows=2, cols=2,
-        subplot_titles=('Episode Rewards', 'Training Loss', 'Epsilon Decay', 'Moving Average Reward'),
-        specs=[[{"secondary_y": False}, {"secondary_y": False}],
-               [{"secondary_y": False}, {"secondary_y": False}]]
-    )
+    env_name = st.session_state.selected_env
+    env_config = ENVIRONMENTS[env_name]
     
-    episodes = st.session_state.training_data['episodes']
-    rewards = st.session_state.training_data['rewards']
-    losses = st.session_state.training_data['losses']
-    epsilons = st.session_state.training_data['epsilon']
-    avg_rewards = st.session_state.training_data['avg_rewards']
+    try:
+        env = gym.make(env_name)
+    except Exception as e:
+        st.error(f"Error creating environment: {str(e)}")
+        st.info("Some environments may require additional packages. Check the requirements.")
+        return
     
-    # Episode rewards
-    fig.add_trace(
-        go.Scatter(x=episodes, y=rewards, mode='lines+markers', name='Reward', line=dict(color='blue')),
-        row=1, col=1
-    )
+    agent = st.session_state.agent
     
-    # Training loss
-    fig.add_trace(
-        go.Scatter(x=episodes, y=losses, mode='lines', name='Loss', line=dict(color='red')),
-        row=1, col=2
-    )
+    progress_bar = st.progress(0)
+    status_text = st.empty()
     
-    # Epsilon decay
-    fig.add_trace(
-        go.Scatter(x=episodes, y=epsilons, mode='lines', name='Epsilon', line=dict(color='green')),
-        row=2, col=1
-    )
+    for episode in range(num_episodes):
+        if stop_training:
+            break
+        
+        try:
+            state, _ = env.reset()
+            total_reward = 0
+            losses = []
+            
+            for step in range(env_config['max_steps']):
+                action = agent.act(state)
+                
+                # Handle continuous vs discrete action spaces
+                if env_config['type'] == 'continuous':
+                    # Convert discrete action to continuous
+                    action_continuous = np.array([action / (agent.action_size - 1) * 2 - 1])
+                    if hasattr(env.action_space, 'shape') and len(env.action_space.shape) > 0:
+                        action_continuous = np.repeat(action_continuous, env.action_space.shape[0])
+                    next_state, reward, done, truncated, _ = env.step(action_continuous)
+                else:
+                    next_state, reward, done, truncated, _ = env.step(action)
+                
+                agent.remember(state, action, reward, next_state, done or truncated)
+                state = next_state
+                total_reward += reward
+                
+                if len(agent.memory) > batch_size:
+                    loss = agent.replay(batch_size)
+                    if loss > 0:
+                        losses.append(loss)
+                
+                if done or truncated:
+                    break
+            
+            # Update target network
+            if episode % target_update_freq == 0:
+                agent.update_target_network()
+            
+            # Store training data
+            st.session_state.training_data['episodes'].append(episode + 1)
+            st.session_state.training_data['rewards'].append(total_reward)
+            st.session_state.training_data['losses'].append(np.mean(losses) if losses else 0)
+            st.session_state.training_data['epsilon'].append(agent.epsilon)
+            
+            # Calculate moving average
+            if len(st.session_state.training_data['rewards']) >= 10:
+                avg_reward = np.mean(st.session_state.training_data['rewards'][-10:])
+            else:
+                avg_reward = np.mean(st.session_state.training_data['rewards'])
+            st.session_state.training_data['avg_rewards'].append(avg_reward)
+            
+            # Update progress
+            progress_bar.progress((episode + 1) / num_episodes)
+            status_text.text(f"Episode {episode + 1}/{num_episodes} - Reward: {total_reward:.2f} - Epsilon: {agent.epsilon:.3f}")
+            
+            # Update plots every 10 episodes
+            if episode % 10 == 0:
+                update_plots(plot_placeholder, stats_placeholder)
+        
+        except Exception as e:
+            st.error(f"Error during episode {episode + 1}: {str(e)}")
+            break
     
-    # Moving average reward
-    fig.add_trace(
-        go.Scatter(x=episodes, y=avg_rewards, mode='lines', name='Avg Reward', line=dict(color='purple')),
-        row=2, col=2
-    )
+    env.close()
+    st.session_state.training_completed = True
+    st.success(f"Training completed! Final average reward: {avg_reward:.2f}")
     
-    fig.update_layout(height=600, showlegend=False, title_text="Training Metrics")
-    plot_placeholder.plotly_chart(fig, use_container_width=True, key=f"training_plots_{len(episodes)}_{int(time.time()*1000)}")
-    
-    # Update statistics
-    if rewards:
-        with stats_placeholder.container():
-            st.metric("Current Episode", len(episodes))
-            st.metric("Last Reward", f"{rewards[-1]:.2f}")
-            st.metric("Best Reward", f"{max(rewards):.2f}")
-            st.metric("Average Reward", f"{np.mean(rewards):.2f}")
-            if losses:
-                st.metric("Current Loss", f"{losses[-1]:.4f}")
-            st.metric("Current Epsilon", f"{epsilons[-1]:.3f}")
+    # Auto-trigger visualization after training
+    st.balloons()
+    time.sleep(1)
+    visualize_trained_agent()
 
 def visualize_trained_agent():
     """Visualize the trained agent playing the selected environment"""
@@ -522,98 +554,116 @@ def create_gif_from_frames():
     
     return gif_buffer.getvalue()
 
-# Training function
-def train_agent():
-    if st.session_state.agent is None:
-        st.error("Please initialize the agent first!")
+def update_plots(plot_placeholder, stats_placeholder):
+    if not st.session_state.training_data['episodes']:
         return
     
-    env_name = st.session_state.selected_env
-    env_config = ENVIRONMENTS[env_name]
+    # Create subplots
+    fig = make_subplots(
+        rows=2, cols=2,
+        subplot_titles=('Episode Rewards', 'Training Loss', 'Epsilon Decay', 'Moving Average Reward'),
+        specs=[[{"secondary_y": False}, {"secondary_y": False}],
+               [{"secondary_y": False}, {"secondary_y": False}]]
+    )
     
-    try:
-        env = gym.make(env_name)
-    except Exception as e:
-        st.error(f"Error creating environment: {str(e)}")
-        st.info("Some environments may require additional packages. Check the requirements.")
+    episodes = st.session_state.training_data['episodes']
+    rewards = st.session_state.training_data['rewards']
+    losses = st.session_state.training_data['losses']
+    epsilons = st.session_state.training_data['epsilon']
+    avg_rewards = st.session_state.training_data['avg_rewards']
+    
+    # Episode rewards
+    fig.add_trace(
+        go.Scatter(x=episodes, y=rewards, mode='lines+markers', name='Reward', line=dict(color='blue')),
+        row=1, col=1
+    )
+    
+    # Training loss
+    fig.add_trace(
+        go.Scatter(x=episodes, y=losses, mode='lines', name='Loss', line=dict(color='red')),
+        row=1, col=2
+    )
+    
+    # Epsilon decay
+    fig.add_trace(
+        go.Scatter(x=episodes, y=epsilons, mode='lines', name='Epsilon', line=dict(color='green')),
+        row=2, col=1
+    )
+    
+    # Moving average reward
+    fig.add_trace(
+        go.Scatter(x=episodes, y=avg_rewards, mode='lines', name='Avg Reward', line=dict(color='purple')),
+        row=2, col=2
+    )
+    
+    fig.update_layout(height=600, showlegend=False, title_text="Training Metrics")
+    plot_placeholder.plotly_chart(fig, use_container_width=True, key=f"training_plots_{len(episodes)}_{int(time.time()*1000)}")
+    
+    # Update statistics
+    if rewards:
+        with stats_placeholder.container():
+            st.metric("Current Episode", len(episodes))
+            st.metric("Last Reward", f"{rewards[-1]:.2f}")
+            st.metric("Best Reward", f"{max(rewards):.2f}")
+            st.metric("Average Reward", f"{np.mean(rewards):.2f}")
+            if losses:
+                st.metric("Current Loss", f"{losses[-1]:.4f}")
+            st.metric("Current Epsilon", f"{epsilons[-1]:.3f}")
+
+    if not st.session_state.training_data['episodes']:
         return
     
-    agent = st.session_state.agent
+    # Create subplots
+    fig = make_subplots(
+        rows=2, cols=2,
+        subplot_titles=('Episode Rewards', 'Training Loss', 'Epsilon Decay', 'Moving Average Reward'),
+        specs=[[{"secondary_y": False}, {"secondary_y": False}],
+               [{"secondary_y": False}, {"secondary_y": False}]]
+    )
     
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    episodes = st.session_state.training_data['episodes']
+    rewards = st.session_state.training_data['rewards']
+    losses = st.session_state.training_data['losses']
+    epsilons = st.session_state.training_data['epsilon']
+    avg_rewards = st.session_state.training_data['avg_rewards']
     
-    for episode in range(num_episodes):
-        if stop_training:
-            break
-        
-        try:
-            state, _ = env.reset()
-            total_reward = 0
-            losses = []
-            
-            for step in range(env_config['max_steps']):
-                action = agent.act(state)
-                
-                # Handle continuous vs discrete action spaces
-                if env_config['type'] == 'continuous':
-                    # Convert discrete action to continuous
-                    action_continuous = np.array([action / (agent.action_size - 1) * 2 - 1])
-                    if hasattr(env.action_space, 'shape') and len(env.action_space.shape) > 0:
-                        action_continuous = np.repeat(action_continuous, env.action_space.shape[0])
-                    next_state, reward, done, truncated, _ = env.step(action_continuous)
-                else:
-                    next_state, reward, done, truncated, _ = env.step(action)
-                
-                agent.remember(state, action, reward, next_state, done or truncated)
-                state = next_state
-                total_reward += reward
-                
-                if len(agent.memory) > batch_size:
-                    loss = agent.replay(batch_size)
-                    if loss > 0:
-                        losses.append(loss)
-                
-                if done or truncated:
-                    break
-            
-            # Update target network
-            if episode % target_update_freq == 0:
-                agent.update_target_network()
-            
-            # Store training data
-            st.session_state.training_data['episodes'].append(episode + 1)
-            st.session_state.training_data['rewards'].append(total_reward)
-            st.session_state.training_data['losses'].append(np.mean(losses) if losses else 0)
-            st.session_state.training_data['epsilon'].append(agent.epsilon)
-            
-            # Calculate moving average
-            if len(st.session_state.training_data['rewards']) >= 10:
-                avg_reward = np.mean(st.session_state.training_data['rewards'][-10:])
-            else:
-                avg_reward = np.mean(st.session_state.training_data['rewards'])
-            st.session_state.training_data['avg_rewards'].append(avg_reward)
-            
-            # Update progress
-            progress_bar.progress((episode + 1) / num_episodes)
-            status_text.text(f"Episode {episode + 1}/{num_episodes} - Reward: {total_reward:.2f} - Epsilon: {agent.epsilon:.3f}")
-            
-            # Update plots every 10 episodes
-            if episode % 10 == 0:
-                update_plots(plot_placeholder, stats_placeholder)
-        
-        except Exception as e:
-            st.error(f"Error during episode {episode + 1}: {str(e)}")
-            break
+    # Episode rewards
+    fig.add_trace(
+        go.Scatter(x=episodes, y=rewards, mode='lines+markers', name='Reward', line=dict(color='blue')),
+        row=1, col=1
+    )
     
-    env.close()
-    st.session_state.training_completed = True
-    st.success(f"Training completed! Final average reward: {avg_reward:.2f}")
+    # Training loss
+    fig.add_trace(
+        go.Scatter(x=episodes, y=losses, mode='lines', name='Loss', line=dict(color='red')),
+        row=1, col=2
+    )
     
-    # Auto-trigger visualization after training
-    st.balloons()
-    time.sleep(1)
-    visualize_trained_agent()
+    # Epsilon decay
+    fig.add_trace(
+        go.Scatter(x=episodes, y=epsilons, mode='lines', name='Epsilon', line=dict(color='green')),
+        row=2, col=1
+    )
+    
+    # Moving average reward
+    fig.add_trace(
+        go.Scatter(x=episodes, y=avg_rewards, mode='lines', name='Avg Reward', line=dict(color='purple')),
+        row=2, col=2
+    )
+    
+    fig.update_layout(height=600, showlegend=False, title_text="Training Metrics")
+    plot_placeholder.plotly_chart(fig, use_container_width=True)
+    
+    # Update statistics
+    if rewards:
+        with stats_placeholder.container():
+            st.metric("Current Episode", len(episodes))
+            st.metric("Last Reward", f"{rewards[-1]:.2f}")
+            st.metric("Best Reward", f"{max(rewards):.2f}")
+            st.metric("Average Reward", f"{np.mean(rewards):.2f}")
+            if losses:
+                st.metric("Current Loss", f"{losses[-1]:.4f}")
+            st.metric("Current Epsilon", f"{epsilons[-1]:.3f}")
 
 # Start training
 if start_training:
@@ -657,53 +707,39 @@ if st.session_state.agent is not None:
     
     with col1:
         if st.button("🧪 Test Agent (5 Episodes)"):
-            env_name = st.session_state.selected_env
-            env_config = ENVIRONMENTS[env_name]
+            env = gym.make('CartPole-v1', render_mode='rgb_array')
+            agent = st.session_state.agent
+            test_rewards = []
             
-            try:
-                env = gym.make(env_name, render_mode='rgb_array')
-                agent = st.session_state.agent
-                test_rewards = []
+            for episode in range(5):
+                state, _ = env.reset()
+                total_reward = 0
+                steps = 0
                 
-                for episode in range(5):
-                    state, _ = env.reset()
-                    total_reward = 0
-                    steps = 0
+                for step in range(500):
+                    # Use greedy policy (no exploration)
+                    temp_epsilon = agent.epsilon
+                    agent.epsilon = 0
+                    action = agent.act(state)
+                    agent.epsilon = temp_epsilon
                     
-                    for step in range(env_config['max_steps']):
-                        # Use greedy policy (no exploration)
-                        temp_epsilon = agent.epsilon
-                        agent.epsilon = 0
-                        action = agent.act(state)
-                        agent.epsilon = temp_epsilon
-                        
-                        if env_config['type'] == 'continuous':
-                            action_continuous = np.array([action / (agent.action_size - 1) * 2 - 1])
-                            if hasattr(env.action_space, 'shape') and len(env.action_space.shape) > 0:
-                                action_continuous = np.repeat(action_continuous, env.action_space.shape[0])
-                            state, reward, done, truncated, _ = env.step(action_continuous)
-                        else:
-                            state, reward, done, truncated, _ = env.step(action)
-                        
-                        total_reward += reward
-                        steps += 1
-                        
-                        if done or truncated:
-                            break
+                    state, reward, done, truncated, _ = env.step(action)
+                    total_reward += reward
+                    steps += 1
                     
-                    test_rewards.append(total_reward)
-                    st.write(f"Test Episode {episode + 1}: {total_reward:.2f} reward")
+                    if done or truncated:
+                        break
                 
-                env.close()
-                st.write(f"Average test performance: {np.mean(test_rewards):.2f}")
-            except Exception as e:
-                st.error(f"Error during testing: {str(e)}")
+                test_rewards.append(total_reward)
+                st.write(f"Test Episode {episode + 1}: {total_reward} steps")
+            
+            env.close()
+            st.write(f"Average test performance: {np.mean(test_rewards):.2f} steps")
     
     with col2:
         st.write("**Agent Status:**")
         if st.session_state.agent:
             st.write(f"✅ Agent initialized")
-            st.write(f"🎮 Environment: {current_env_config['name']}")
             st.write(f"🧠 Memory size: {len(st.session_state.agent.memory)}")
             st.write(f"🎯 Current epsilon: {st.session_state.agent.epsilon:.3f}")
         else:
