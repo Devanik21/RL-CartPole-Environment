@@ -230,14 +230,7 @@ if 'agent_frames' not in st.session_state:
 st.title("🤖 Reinforcement Learning Agent Training Dashboard")
 st.markdown("### Multi-Environment Deep Q-Network (DQN) & Continuous Control")
 
-# Environment Selection
-st.sidebar.header("🎮 Environment Selection")
-env_names = list(ENVIRONMENTS.keys())
-env_display_names = [f"{ENVIRONMENTS[env]['name']} ({ENVIRONMENTS[env]['type']})" for env in env_names]
 
-# Initialize session state for the selected environment if it doesn't exist
-if 'selected_env' not in st.session_state:
-    st.session_state.selected_env = env_names[0]  # Default to the first one
 
 # Get the index of the currently selected environment for the selectbox
 try:
