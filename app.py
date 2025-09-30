@@ -254,7 +254,7 @@ hidden_size = st.sidebar.selectbox("Hidden Layer Size", [64, 128, 256], index=1)
 
 # Training parameters
 st.sidebar.header("🎯 Training Parameters")
-num_episodes = st.sidebar.slider("Number of Episodes", 100, 2000, 500)
+num_episodes = st.sidebar.slider("Number of Episodes", 10, 5000, 500)
 target_update_freq = st.sidebar.slider("Target Network Update Frequency", 5, 50, 10)
 batch_size = st.sidebar.selectbox("Batch Size", [16, 32, 64], index=1)
 
