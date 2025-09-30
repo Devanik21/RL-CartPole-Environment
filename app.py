@@ -503,7 +503,7 @@ def visualize_trained_agent():
                     
                     # Display current frame
                     img = Image.fromarray(frame)
-                    image_placeholder.image(img, caption=f"{env_config['name']} - Episode {episode + 1} - Step {step_count}", use_column_width=True)
+                    image_placeholder.image(img, caption=f"{env_config['name']} - Episode {episode + 1} - Step {step_count}", use_container_width=True)
                     
                     # Show game info
                     if show_info and info_placeholder:
