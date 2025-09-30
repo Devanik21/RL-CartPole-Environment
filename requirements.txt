@@ -10,3 +10,4 @@ scipy>=1.9.0
 opencv-python
 gymnasium[classic-control]>=0.29.0
 pygame>=2.1.0
+gymnasium[box2d]
