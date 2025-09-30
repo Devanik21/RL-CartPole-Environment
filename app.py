@@ -82,7 +82,7 @@ ENVIRONMENTS = {
         'max_steps': 1600,
         'success_threshold': 300
     },
-    'CarRacing-v2': {
+    'CarRacing-v3': {
         'name': 'Car Racing',
         'description': 'Race a car on a track',
         'type': 'continuous',
