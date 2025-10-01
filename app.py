@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import gymnasium as gym
+import gymnasium as gym 
 import torch
 import torch.nn as nn 
 import torch.optim as optim  
