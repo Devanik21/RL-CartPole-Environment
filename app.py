@@ -54,7 +54,7 @@ ENVIRONMENTS = {
         'max_steps': 200,
         'success_threshold': -110
     },
-    'LunarLander-v2': {
+    'LunarLander-v3': {
         'name': 'Lunar Lander',
         'description': 'Land a spacecraft safely',
         'type': 'discrete',
