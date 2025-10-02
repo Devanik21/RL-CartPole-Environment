@@ -89,14 +89,14 @@ ENVIRONMENTS = {
         'max_steps': 1000,
         'success_threshold': 900
     },
-    'Pusher-v4': {
+    'Pusher-v5': {
         'name': 'Pusher (Mujoco)',
         'description': 'Push object to target',
         'type': 'continuous',
         'max_steps': 100,
         'success_threshold': 0
     },
-    'Reacher-v4': {
+    'Reacher-v5': {
         'name': 'Reacher (Mujoco)',
         'description': 'Reach a target with robot arm',
         'type': 'continuous',
