@@ -423,7 +423,7 @@ def train_agent():
     st.success(f"Training completed! Final average reward: {avg_reward:.2f}")
     
     # Auto-trigger visualization after training
-    st.balloons()
+    #st.balloons()
     time.sleep(1)
     visualize_trained_agent()
 
