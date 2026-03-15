@@ -1,233 +1,192 @@
-# 🤖 Reinforcement Learning Agent Training Dashboard
- 
-> **A comprehensive research platform for training and analyzing Deep Q-Network (DQN) agents with real-time visualization and performance monitoring.**
+# RL Cartpole Environment
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ktguhhpiffqbore4vm4avl.streamlit.app/)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Language](https://img.shields.io/badge/Language-Python-3776AB?style=flat-square) ![Stars](https://img.shields.io/github/stars/Devanik21/RL-CartPole-Environment?style=flat-square&color=yellow) ![Forks](https://img.shields.io/github/forks/Devanik21/RL-CartPole-Environment?style=flat-square&color=blue) ![Author](https://img.shields.io/badge/Author-Devanik21-black?style=flat-square&logo=github) ![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)
 
-## 🎯 Overview
-
-This interactive dashboard provides researchers and practitioners with a complete environment for training, analyzing, and visualizing Deep Q-Network agents. Built specifically for reinforcement learning research, it offers real-time monitoring, comprehensive metrics tracking, and automated agent visualization capabilities.
-
-**Key Innovation**: Real-time agent visualization with frame capture and GIF generation for research documentation and presentation.
-
-## 🚀 Live Demo
-
-**[Try the Live Demo →]([https://your-streamlit-app-url.com](https://ktguhhpiffqbore4vm4avl.streamlit.app/))**
-
-![Training Dashboard Preview](https://via.placeholder.com/800x400/2D2419/F5DEB3?text=RL+Training+Dashboard)
-
-## ✨ Features
-
-### 🔬 Research-Grade Training Environment
-- **Real-time Metrics Monitoring**: Live visualization of training progress with interactive Plotly charts
-- **Hyperparameter Optimization**: Interactive tuning interface for learning rate, discount factor, exploration parameters
-- **Performance Analytics**: Moving averages, loss tracking, and convergence analysis
-- **Reproducible Experiments**: Configurable random seeds and parameter logging
-
-### 🎬 Agent Visualization & Analysis
-- **Live Agent Rendering**: Watch trained agents perform in real-time
-- **Frame-by-Frame Analysis**: Detailed state information and decision tracking
-- **GIF Generation**: Create shareable visualizations for research presentations
-- **Performance Benchmarking**: Automated testing across multiple episodes
-
-### 📊 Advanced Analytics
-- **Training Convergence Analysis**: Multi-metric dashboard with customizable views
-- **Data Export**: CSV export for external analysis and research papers
-- **Statistical Summaries**: Comprehensive performance statistics
-- **Comparative Analysis**: Track multiple training runs
-
-### 🎨 User Experience
-- **Dark Coffee Theme**: Eye-friendly interface optimized for long research sessions
-- **Responsive Design**: Works seamlessly across different screen sizes
-- **Intuitive Controls**: Researcher-friendly interface design
-
-## 🧠 Technical Architecture
-
-### Deep Q-Network Implementation
-```python
-# Core DQN with experience replay and target networks
-class DQN(nn.Module):
-    def __init__(self, state_size, action_size, hidden_size=128):
-        super(DQN, self).__init__()
-        self.fc1 = nn.Linear(state_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size) 
-        self.fc3 = nn.Linear(hidden_size, action_size)
-```
-
-### Key Algorithms & Techniques
-- **Experience Replay**: Stabilized training with replay buffer
-- **Target Networks**: Reduced correlation in Q-learning updates
-- **Epsilon-Greedy Exploration**: Configurable exploration strategy
-- **Double DQN**: Optional advanced techniques for improved stability
-
-## 🔬 Research Applications
-
-### Academic Research
-- **Algorithm Comparison**: Benchmark different RL algorithms
-- **Hyperparameter Studies**: Systematic exploration of parameter spaces
-- **Convergence Analysis**: Study learning dynamics and stability
-- **Visualization for Papers**: Generate high-quality figures and GIFs
-
-### Industry Applications
-- **Prototype Development**: Rapid RL agent prototyping
-- **Performance Monitoring**: Production-ready monitoring dashboards
-- **Educational Tools**: Teaching reinforcement learning concepts
-- **Research Documentation**: Comprehensive experiment tracking
-
-## 🚀 Quick Start
-
-### 1. Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/rl-training-dashboard.git
-cd rl-training-dashboard
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the application
-streamlit run app.py
-```
-
-### 2. Cloud Deployment
-
-[![Deploy to Streamlit Cloud](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/)
-
-1. Fork this repository
-2. Connect to Streamlit Cloud
-3. Deploy with one click
-
-## 📊 Performance Benchmarks
-
-| Environment | Average Reward | Training Time | Convergence Episodes |
-|-------------|----------------|---------------|---------------------|
-| CartPole-v1 | 475+ steps     | ~5 minutes    | 200-500 episodes   |
-
-## 🔧 Advanced Configuration
-
-### Hyperparameter Optimization
-```python
-# Example configuration for research
-config = {
-    'learning_rate': 0.001,
-    'gamma': 0.95,
-    'epsilon_decay': 0.995,
-    'hidden_size': 128,
-    'batch_size': 32,
-    'target_update_freq': 10
-}
-```
-
-### Custom Environments
-The framework is designed to be easily extensible to other Gymnasium environments:
-- MountainCar-v0
-- Acrobot-v1  
-- LunarLander-v2
-- Custom environments
-
-## 📚 Research Context
-
-This project contributes to the reinforcement learning research community by providing:
-
-1. **Accessible Research Tools**: Lowering barriers to RL experimentation
-2. **Reproducible Results**: Standardized training and evaluation protocols
-3. **Visualization Standards**: Consistent visualization methods for research
-4. **Educational Resources**: Interactive learning environment for RL concepts
-
-## 🤝 Contributing
-
-We welcome contributions from the research community! Areas of interest:
-
-- **New Algorithms**: Implement additional RL algorithms (PPO, A3C, SAC)
-- **Environment Support**: Add support for more complex environments
-- **Visualization Features**: Enhanced plotting and analysis tools
-- **Performance Optimizations**: GPU support and distributed training
-- **Research Tools**: Statistical analysis and experiment management
-
-### Development Setup
-```bash
-# Development installation
-git clone https://github.com/yourusername/rl-training-dashboard.git
-cd rl-training-dashboard
-pip install -r requirements.txt -r requirements-dev.txt
-
-# Run tests
-pytest tests/
-
-# Code formatting
-black app.py
-flake8 app.py
-```
-
-## 📄 Citation
-
-If you use this tool in your research, please consider citing:
-
-```bibtex
-@software{rl_training_dashboard,
-  title={RL Training Dashboard: Interactive Platform for Reinforcement Learning Research},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/rl-training-dashboard},
-  note={Open-source reinforcement learning research platform}
-}
-```
-
-## 🏆 Acknowledgments
-
-Built with the following excellent open-source projects:
-- [Gymnasium](https://gymnasium.farama.org/) - RL environments
-- [PyTorch](https://pytorch.org/) - Deep learning framework
-- [Streamlit](https://streamlit.io/) - Web application framework
-- [Plotly](https://plotly.com/) - Interactive visualizations
-
-## 📞 Contact & Collaboration
-
-**Interested in collaboration or have questions?**
-
-- 📧 **Email**: your.email@domain.com
-- 🐦 **Twitter**: [@yourusername](https://twitter.com/yourusername)
-- 📝 **Medium**: [@yourusername](https://medium.com/@yourusername)
-- 💼 **LinkedIn**: [Your Name](https://linkedin.com/in/yourprofile)
-- 🔬 **ResearchGate**: [Your Profile](https://researchgate.net/profile/yourprofile)
-
-**Open to discussing:**
-- Research collaborations
-- Industry applications
-- Academic partnerships
-- Code contributions
-- Speaking opportunities
-
-## 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/rl-training-dashboard&type=Date)](https://star-history.com/#yourusername/rl-training-dashboard&Date)
-
-## 📈 Roadmap
-
-### Version 2.0 (Planned)
-- [ ] Multi-agent support
-- [ ] Distributed training
-- [ ] Advanced algorithms (PPO, SAC, TD3)
-- [ ] Custom environment integration
-- [ ] Hyperparameter optimization automation
-- [ ] Model checkpointing and resuming
-- [ ] Tensorboard integration
-- [ ] GPU acceleration support
-
-### Research Features
-- [ ] Statistical significance testing
-- [ ] Experiment comparison tools
-- [ ] Automated report generation
-- [ ] Integration with MLflow/Weights & Biases
-- [ ] Publication-ready figure generation
+> RL Cartpole Environment — an intelligent, interactive ML application built for real-world prediction and analysis.
 
 ---
 
-**⭐ If you find this project useful for your research, please give it a star!**
+**Topics:** `reinforcement-learning` · `actor-critic` · `benchmark` · `cartpole` · `classical-control` · `deep-reinforcement-learning` · `neural-networks` · `openai-gym` · `policy-gradient` · `ppo`
 
-**🔔 Watch this repository to stay updated with the latest features and research applications.**
+## Overview
 
-*Built with ❤️ for the reinforcement learning research community*
+RL Cartpole Environment is a machine learning web application built on Streamlit that provides a clean, accessible interface for a trained predictive model. The application takes structured user input, preprocesses it through a scikit-learn Pipeline, and returns model predictions with confidence scores and explanatory visualisations.
+
+The project follows a full ML lifecycle: data collection and EDA, feature engineering, model training and cross-validation, serialisation, and deployment as an interactive web application. All preprocessing steps are encapsulated in a Pipeline object to guarantee consistency between training and inference environments.
+
+An embedded model evaluation module allows users to inspect the trained model's performance on the held-out test set, view the confusion matrix or regression residual plots, and compare multiple candidate models before selecting the deployment model.
+
+---
+
+## Motivation
+
+This project was built to bridge the gap between a trained ML model and a non-technical end user. A model that lives only in a Jupyter notebook creates no value. Wrapping it in a clean, deployable Streamlit application makes it accessible, shareable, and immediately useful.
+
+---
+
+## Architecture
+
+```
+User Input (form / sliders)
+        │
+  sklearn Pipeline (scaler + model)
+        │
+  Prediction + Confidence
+        │
+  SHAP / Feature Importance Visualisation
+```
+
+---
+
+## Features
+
+### Input Interface
+Validated form widgets covering all model features with sensible defaults and range constraints derived from the training data distribution.
+
+### Model Inference
+Trained scikit-learn pipeline loaded from a serialised joblib file at startup; inference is performed on every form submission.
+
+### Confidence Display
+Prediction probability or regression confidence interval displayed alongside the point prediction for transparent uncertainty communication.
+
+### SHAP Explainability
+Per-prediction SHAP waterfall chart showing individual feature contributions to the model output.
+
+### Model Evaluation Panel
+Confusion matrix (classification) or residual plot (regression) with accuracy, F1, AUC, MAE, RMSE metrics on the test split.
+
+### Dataset Explorer
+Interactive table and chart view of the training dataset with filtering, sorting, and distribution visualisations.
+
+### Batch CSV Prediction
+Upload a CSV file for bulk inference; results are returned as a downloadable table with predictions and confidence scores.
+
+### Responsive Layout
+Mobile-compatible Streamlit layout with sidebar controls and main panel visualisations.
+
+---
+
+## Tech Stack
+
+| Library / Tool | Role | Why This Choice |
+|---|---|---|
+| **Streamlit** | Web application framework | Python-native UI with widget state management |
+| **scikit-learn** | ML pipeline | Preprocessing, model, cross-validation, metrics |
+| **pandas** | Data handling | CSV I/O, feature engineering, batch processing |
+| **Plotly** | Visualisation | Interactive charts, confusion matrix, residual plots |
+| **SHAP** | Explainability | Feature importance per prediction |
+| **joblib** | Model persistence | Serialise and load pipeline |
+| **NumPy** | Numerical ops | Array operations and statistical utilities |
+
+> **Key packages detected in this repo:** `streamlit` · `numpy` · `matplotlib` · `pandas` · `torch` · `torchvision` · `gymnasium` · `plotly` · `scipy` · `opencv-python`
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.9+ (or Node.js 18+ for TypeScript/JS projects)
+- `pip` or `npm` package manager
+- Relevant API keys (see Configuration section)
+
+### Installation
+
+```bash
+git clone https://github.com/Devanik21/RL-CartPole-Environment.git
+cd RL-CartPole-Environment
+python -m venv venv && source venv/bin/activate
+pip install streamlit scikit-learn shap pandas plotly joblib numpy
+streamlit run app.py
+```
+
+---
+
+## Usage
+
+```bash
+streamlit run app.py
+
+# Batch prediction
+python batch_predict.py --input data.csv --output results.csv
+
+# Retrain
+python train.py --data dataset.csv
+```
+
+---
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `MODEL_PATH` | `model.pkl` | Path to serialised model pipeline |
+| `SCALER_PATH` | `scaler.pkl` | Path to fitted scaler |
+| `SHAP_ENABLED` | `True` | Enable SHAP explanations |
+| `TOP_K` | `3` | Top-K results to display |
+
+> Copy `.env.example` to `.env` and populate all required values before running.
+
+---
+
+## Project Structure
+
+```
+RL-CartPole-Environment/
+├── README.md
+├── requirements.txt
+├── app.py
+├── .devcontainer/devcontainer.json
+└── ...
+```
+
+---
+
+## Roadmap
+
+- [ ] Continuous learning pipeline with user feedback loop
+- [ ] A/B testing framework for model comparison in production
+- [ ] REST API wrapper (FastAPI) for programmatic access
+- [ ] Docker container for reproducible deployment
+- [ ] Monitoring dashboard for prediction drift detection
+
+---
+
+## Contributing
+
+Contributions, issues, and feature requests are welcome. Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'feat: add your feature'`)
+4. Push to your branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
+
+Please follow conventional commit messages and ensure any new code is documented.
+
+---
+
+## Notes
+
+All model performance metrics are reported on the held-out test set. Production performance may vary with distribution shift. Retrain periodically with fresh data.
+
+---
+
+## Author
+
+**Devanik Debnath**  
+B.Tech, Electronics & Communication Engineering  
+National Institute of Technology Agartala
+
+[![GitHub](https://img.shields.io/badge/GitHub-Devanik21-black?style=flat-square&logo=github)](https://github.com/Devanik21)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-devanik-blue?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/devanik/)
+
+---
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+*Crafted with curiosity, precision, and a belief that good software is worth building well.*
